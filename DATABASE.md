@@ -45,26 +45,36 @@ up on abandoned checkouts, not just completed ones. A Stripe webhook handler (se
 3) should flip `status` to `PAID` once `checkout.session.completed` fires, using
 `stripeSessionId` to find the right row.
 
-## Switching from SQLite to Postgres
+## Connecting to Supabase Postgres
 
-The schema ships pointed at SQLite for zero-setup local development. To move to Postgres:
+The schema is configured for Supabase's Postgres, using two connection strings — this is
+Supabase's recommended pattern for serverless hosts like Netlify:
 
-1. In `prisma/schema.prisma`, change:
-   ```prisma
-   datasource db {
-     provider = "postgresql" // was "sqlite"
-     url      = env("DATABASE_URL")
-   }
-   ```
-2. Update `DATABASE_URL` in `.env` to a Postgres connection string, e.g.:
-   ```
-   DATABASE_URL="postgresql://user:password@host:5432/launchpad_os"
-   ```
-3. Run `npx prisma migrate dev --name init` to create the initial migration against Postgres
-   (SQLite migrations aren't portable, so start a fresh migration history here).
-4. In production, run `npx prisma migrate deploy` instead of `migrate dev`.
+- `DATABASE_URL` — the **pooled** connection (via PgBouncer, port `6543`), used at runtime by
+  your deployed functions. Serverless functions open a lot of short-lived connections; going
+  through the pooler avoids exhausting Postgres's connection limit.
+- `DIRECT_URL` — the **direct** connection (port `5432`), used only when running
+  `prisma migrate`. Migrations need a direct connection because PgBouncer's transaction mode
+  doesn't support some of the session-level commands migrations issue.
 
-`docker-compose.yml` already provisions a Postgres instance for this — see README section 4A.
+**Where to find both:** in your Supabase project, go to **Project Settings → Database →
+Connection string**. Supabase shows tabs for both pooled and direct — copy each into your `.env`
+(or your host's environment variables) in the format shown in `.env.example`, substituting
+`[YOUR-DB-PASSWORD]` with your project's database password (set when you created the project —
+not the `anon`/`publishable` API key, which is a separate credential for the Supabase client SDK
+and won't work here).
+
+Then run your first migration against it:
+
+```bash
+npx prisma migrate dev --name init
+```
+
+In production, run `npx prisma migrate deploy` instead — it applies existing migrations without
+prompting or generating new ones.
+
+`docker-compose.yml`'s local Postgres service is only needed if you'd rather develop against a
+local database instead of Supabase directly — either works.
 
 ## Common queries you'll want
 

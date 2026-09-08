@@ -38,19 +38,19 @@ launchpad-os/
 
 ## 2. Quick start (local development)
 
-Requires Node.js 18.18+ and npm.
+Requires Node.js 18.18+ and npm, plus a Supabase project (or any Postgres database).
 
 ```bash
-# 1. Install dependencies
+# 1. Install dependencies (this also runs `prisma generate` automatically)
 npm install
 
 # 2. Set up environment variables
 cp .env.example .env
-# The defaults work out of the box with SQLite — no changes needed to start.
+# Fill in DATABASE_URL and DIRECT_URL with your Supabase connection strings —
+# see DATABASE.md "Connecting to Supabase Postgres" for exactly where to find them.
 
-# 3. Create the database and generate the Prisma client
-npm run db:push
-npm run db:generate
+# 3. Create the database tables
+npm run db:migrate
 
 # 4. (Optional) seed some sample data
 npm run db:seed
@@ -60,8 +60,8 @@ npm run dev
 ```
 
 Visit `http://localhost:3000`. The pricing buttons and hero email form are fully wired to the
-local database — try submitting the hero form, then run `npm run db:studio` to see the row land
-in the `Lead` table.
+database — try submitting the hero form, then run `npm run db:studio` to see the row land in the
+`Lead` table.
 
 ---
 
@@ -87,37 +87,58 @@ one-file change inside `app/api/leads/route.ts` — there's a `TODO` marking exa
 
 ## 4. Deployment
 
-### Option A — Docker (recommended for self-hosting)
+### Option A — Netlify (this repo is pre-configured for it)
+
+`netlify.toml` is already set up with the official `@netlify/plugin-nextjs` runtime, and
+`prisma generate` runs automatically on every `npm install` via the `postinstall` script.
+
+1. Push this repo to GitHub (already done if you're reading this from the repo)
+2. In Netlify: **Add new site → Import an existing project** → select this repo
+3. In **Site settings → Environment variables**, add:
+   - `DATABASE_URL` — your Supabase **pooled** connection string
+   - `DIRECT_URL` — your Supabase **direct** connection string
+   - `NEXT_PUBLIC_SITE_URL` — your Netlify site URL
+   - `STRIPE_SECRET_KEY` — optional, leave blank to use the built-in `/checkout-demo` flow
+   
+   See `DATABASE.md` → "Connecting to Supabase Postgres" for exactly where to find the two
+   connection strings.
+4. Before the first deploy, run the initial migration against your Supabase database from your
+   local machine (Netlify's build step doesn't create migrations, only applies them):
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+   Commit and push the generated `prisma/migrations/` folder.
+5. Click **Deploy site**.
+
+### Option B — Docker (self-hosting)
 
 ```bash
 docker compose up --build
 ```
 
-This starts the app on `:3000` plus a Postgres database. Before your first run, switch the
-Prisma datasource provider from `sqlite` to `postgresql` in `prisma/schema.prisma` (see
-`DATABASE.md`), then run migrations inside the container:
+This starts the app on `:3000` plus a local Postgres database — useful for developing without
+depending on Supabase. Point `DATABASE_URL` (and `DIRECT_URL`, same value works for local
+Postgres since there's no pooler) at whichever database you're using, then run:
 
 ```bash
 docker compose exec web npx prisma migrate deploy
 ```
 
-### Option B — Vercel (or any Next.js host)
+### Option C — Vercel (or any Next.js host)
 
 1. Push this repo to GitHub
 2. Import it into Vercel
-3. Add environment variables from `.env.example` in the Vercel dashboard
-4. Point `DATABASE_URL` at a hosted Postgres instance (Neon, Supabase, Railway, RDS, etc.) —
-   Vercel's serverless functions can't use a local SQLite file
-5. Deploy — Vercel runs `npm run build` automatically
+3. Add the same environment variables as the Netlify steps above
+4. Deploy — Vercel runs `npm run build` automatically
 
-### Option C — Any Node host (Render, Fly.io, a VPS)
+### Option D — Any Node host (Render, Fly.io, a VPS)
 
 ```bash
 npm run build
 npm run start
 ```
 
-Make sure `DATABASE_URL` points at a reachable Postgres instance and that
+Make sure `DATABASE_URL` / `DIRECT_URL` point at a reachable Postgres instance and that
 `npx prisma migrate deploy` has been run against it first.
 
 ---

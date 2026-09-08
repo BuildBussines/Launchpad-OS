@@ -1,14 +1,15 @@
 // Launchpad OS — database schema
-// Dev default: SQLite (zero setup). Swap the datasource below to postgresql
-// for production — see DATABASE.md for the exact steps.
+// Configured for Supabase Postgres. See DATABASE.md for where to find
+// DATABASE_URL / DIRECT_URL in your Supabase project settings.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite" // change to "postgresql" for production, see DATABASE.md
-  url      = env("DATABASE_URL")
+  provider  = "postgresql" // Supabase Postgres
+  url       = env("DATABASE_URL") // pooled connection (PgBouncer) — used at runtime by Netlify functions
+  directUrl = env("DIRECT_URL")   // direct connection — used only for migrations
 }
 
 // A captured email from the hero form, exit-intent, or any future lead
