@@ -1,8 +1,8 @@
 // ===========================================================================
 // EDIT ME — fill in your real details before publishing
 // ===========================================================================
-const WHATSAPP_NUMBER = "923001234567"; // EDIT ME: WHATSAPP — country code + number, no + or spaces (e.g. Pakistan: 923001234567)
-const JAZZCASH_NUMBER = "03XX-XXXXXXX"; // EDIT ME: JAZZCASH — must match the number shown in index.html
+const WHATSAPP_NUMBER = "923216781991"; // EDIT ME: WHATSAPP — country code + number, no + or spaces (e.g. Pakistan: 923001234567)
+const JAZZCASH_NUMBER = "0321-6781991"; // EDIT ME: JAZZCASH — must match the number shown in index.html
 const PRICE_LABEL = "Rs. 799";          // EDIT ME: PRICE — must match index.html
 // ===========================================================================
 
